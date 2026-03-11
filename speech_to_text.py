@@ -1,5 +1,5 @@
 import tempfile
-from typing import Optional, Union
+from typing import Optional, Tuple, Union
 
 import whisper
 
@@ -41,19 +41,13 @@ def _get_model() -> whisper.Whisper:
     return globals()[" _whisper_model_cache"]
 
 
-def transcribe_audio(audio_source: Union[bytes, str]) -> Optional[str]:
+def transcribe_audio(audio_source: Union[bytes, str]) -> Tuple[Optional[str], Optional[str]]:
     """
     Transcribe audio into text using Whisper.
 
-    Parameters
-    ----------
-    audio_source:
-        - bytes: raw audio bytes from browser recorder / upload (WebM, WAV, MP3, etc.)
-        - str: path to an audio file on disk
-
     Returns
     -------
-    transcript text or None if transcription fails.
+    (transcript, error_message). On success: (text, None). On failure: (None, error_str).
     """
     try:
         if isinstance(audio_source, bytes):
@@ -68,9 +62,11 @@ def transcribe_audio(audio_source: Union[bytes, str]) -> Optional[str]:
             result = model.transcribe(audio_source)
 
         text = result.get("text", "").strip()
-        return text if text else None
-    except Exception:
-        return None
+        if text:
+            return text, None
+        return None, "Whisper returned empty text (silence or unsupported audio)."
+    except Exception as e:
+        return None, str(e)
 
 
 
