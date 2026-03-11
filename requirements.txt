@@ -1,0 +1,5 @@
+streamlit
+openai-whisper
+pymongo
+audio-recorder-streamlit
+pydub
