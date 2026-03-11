@@ -31,6 +31,14 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+**Note:** Speech-to-text requires [ffmpeg](https://ffmpeg.org). Install it:
+
+- **Windows:** `choco install ffmpeg` or download from ffmpeg.org
+- **macOS:** `brew install ffmpeg`
+- **Linux:** `apt install ffmpeg` or `yum install ffmpeg`
+
+On **Streamlit Cloud**, `packages.txt` installs ffmpeg automatically.
+
 ### MongoDB Configuration (Optional)
 
 Set these environment variables before running the app if you want to persist consultations:
@@ -38,4 +46,6 @@ Set these environment variables before running the app if you want to persist co
 - `MONGODB_URI` – MongoDB connection string
 - `MONGODB_DB_NAME` – (optional) database name, default `ambient_medical_scribe`
 - `MONGODB_COLLECTION_NAME` – (optional) collection name, default `consultations`
+
+
 
