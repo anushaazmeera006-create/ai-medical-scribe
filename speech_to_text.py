@@ -4,6 +4,26 @@ from typing import Optional, Union
 import whisper
 
 
+# Magic bytes → file extension (Whisper/ffmpeg uses extension to decode)
+_FORMAT_SIGS = (
+    (b"RIFF", ".wav"),
+    (b"\x1a\x45\xdf\xa3", ".webm"),
+    (b"OggS", ".ogg"),
+    (b"ID3", ".mp3"),
+    (b"\xff\xfb", ".mp3"),
+    (b"\xff\xfa", ".mp3"),
+    (b"ftyp", ".m4a"),
+)
+
+
+def _suffix_for_bytes(data: bytes) -> str:
+    """Pick file extension from magic bytes so ffmpeg can decode correctly."""
+    for sig, ext in _FORMAT_SIGS:
+        if data.startswith(sig):
+            return ext
+    return ".webm"  # fallback for browser recorders that may use webm
+
+
 def _get_model() -> whisper.Whisper:
     """
     Lazily load the Whisper model once.
@@ -37,8 +57,8 @@ def transcribe_audio(audio_source: Union[bytes, str]) -> Optional[str]:
     """
     try:
         if isinstance(audio_source, bytes):
-            # Write raw bytes to a temporary file; Whisper/ffmpeg will detect format.
-            with tempfile.NamedTemporaryFile(suffix=".webm", delete=True) as tmp:
+            suffix = _suffix_for_bytes(audio_source)
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=True) as tmp:
                 tmp.write(audio_source)
                 tmp.flush()
                 model = _get_model()
@@ -51,4 +71,6 @@ def transcribe_audio(audio_source: Union[bytes, str]) -> Optional[str]:
         return text if text else None
     except Exception:
         return None
+
+
 
