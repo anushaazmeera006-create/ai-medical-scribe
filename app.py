@@ -146,9 +146,11 @@ def run_ai_pipeline() -> None:
         return
 
     with st.spinner("Running speech-to-text..."):
-        transcript = transcribe_audio(audio_bytes) or ""
+        transcript, err = transcribe_audio(audio_bytes)
     if not transcript:
-        st.error("Speech-to-text failed. Please try again with a clearer recording.")
+        st.error(
+            f"**Speech-to-text failed.** {err or 'Please try again with a clearer recording.'}"
+        )
         return
 
     st.session_state.transcript = transcript
