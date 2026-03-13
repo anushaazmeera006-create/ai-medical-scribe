@@ -1,7 +1,7 @@
-
 import io
 import json
 import os
+from pathlib import Path
 import wave
 from typing import Optional, Tuple, Union
 
@@ -9,6 +9,8 @@ try:
     from openai import OpenAI
 except Exception:
     OpenAI = None  # type: ignore[assignment]
+
+_DEFAULT_VOSK_PATH_FILE = Path(__file__).with_name(".vosk_model_path")
 
 
 # Magic bytes → file extension (helps OpenAI infer format)
@@ -40,13 +42,26 @@ def _get_client() -> "OpenAI":
     return globals()["_openai_client_cache"]
 
 
-def _transcribe_wav_vosk(audio_bytes: bytes) -> Tuple[Optional[str], Optional[str]]:
+def _resolve_vosk_model_path(override: Optional[str] = None) -> str:
+    if override and override.strip():
+        return override.strip()
+    env = os.environ.get("VOSK_MODEL_PATH", "").strip()
+    if env:
+        return env
+    try:
+        saved = _DEFAULT_VOSK_PATH_FILE.read_text(encoding="utf-8").strip()
+        return saved
+    except Exception:
+        return ""
+
+
+def _transcribe_wav_vosk(audio_bytes: bytes, *, model_path: str) -> Tuple[Optional[str], Optional[str]]:
     """
     Free/offline fallback using Vosk (WAV PCM recommended).
 
     Requirements:
     - pip install vosk
-    - Download a Vosk model and set VOSK_MODEL_PATH to the folder path
+    - Download a Vosk model and set it via app settings (or VOSK_MODEL_PATH)
     """
     try:
         from vosk import KaldiRecognizer, Model  # type: ignore[import-not-found]
@@ -57,12 +72,11 @@ def _transcribe_wav_vosk(audio_bytes: bytes) -> Tuple[Optional[str], Optional[st
             "and download a Vosk model, then set VOSK_MODEL_PATH.",
         )
 
-    model_path = os.environ.get("VOSK_MODEL_PATH", "").strip()
     if not model_path:
         return (
             None,
-            "Offline STT needs a Vosk model. Download a model and set "
-            "`VOSK_MODEL_PATH` to that folder.",
+            "Offline STT needs a Vosk model folder. Set it in the app (Settings) "
+            "or set `VOSK_MODEL_PATH`.",
         )
 
     try:
@@ -100,7 +114,11 @@ def _transcribe_wav_vosk(audio_bytes: bytes) -> Tuple[Optional[str], Optional[st
     return full, None
 
 
-def transcribe_audio(audio_source: Union[bytes, str]) -> Tuple[Optional[str], Optional[str]]:
+def transcribe_audio(
+    audio_source: Union[bytes, str],
+    *,
+    vosk_model_path: Optional[str] = None,
+) -> Tuple[Optional[str], Optional[str]]:
     """
     Transcribe audio into text using OpenAI Whisper API.
 
@@ -111,7 +129,8 @@ def transcribe_audio(audio_source: Union[bytes, str]) -> Tuple[Optional[str], Op
     # If no API key (or user doesn't want to pay), use offline fallback automatically.
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if isinstance(audio_source, bytes) and (not api_key):
-        return _transcribe_wav_vosk(audio_source)
+        model_path = _resolve_vosk_model_path(vosk_model_path)
+        return _transcribe_wav_vosk(audio_source, model_path=model_path)
 
     try:
         client = _get_client()
@@ -141,19 +160,13 @@ def transcribe_audio(audio_source: Union[bytes, str]) -> Tuple[Optional[str], Op
     except Exception as e:
         # If API fails (quota/invalid key), try offline fallback for WAV bytes.
         if isinstance(audio_source, bytes) and audio_source.startswith(b"RIFF"):
-            txt, err = _transcribe_wav_vosk(audio_source)
+            model_path = _resolve_vosk_model_path(vosk_model_path)
+            txt, err = _transcribe_wav_vosk(audio_source, model_path=model_path)
             if txt:
                 return txt, None
             # Prefer original error if offline isn't available.
             return None, f"{e} (offline fallback: {err})"
         return None, str(e)
-
-
-
-
-
- 
-
 
 
 
