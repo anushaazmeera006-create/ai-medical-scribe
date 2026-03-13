@@ -31,7 +31,21 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**Note:** Speech-to-text uses the OpenAI Whisper API directly and does **not** require `ffmpeg`/`pydub` locally.
+### Speech-to-text (No Payment Option)
+
+If you don’t want to pay for OpenAI, the app can run **offline speech-to-text** using **Vosk**.
+
+1) Download a Vosk model (Hindi or multilingual) and unzip it somewhere on your PC.
+2) Set the environment variable `VOSK_MODEL_PATH` to that folder.
+
+PowerShell example:
+
+```powershell
+$env:VOSK_MODEL_PATH="C:\path\to\vosk-model-folder"
+streamlit run app.py
+```
+
+**Note:** Offline STT works best with **WAV** recordings. (The app automatically uses offline STT when `OPENAI_API_KEY` is not set.)
 
 ### MongoDB Configuration (Optional)
 
@@ -40,6 +54,9 @@ Set these environment variables before running the app if you want to persist co
 - `MONGODB_URI` – MongoDB connection string
 - `MONGODB_DB_NAME` – (optional) database name, default `ambient_medical_scribe`
 - `MONGODB_COLLECTION_NAME` – (optional) collection name, default `consultations`
+
+
+
 
 
 
