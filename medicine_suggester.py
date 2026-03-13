@@ -5,6 +5,8 @@ SYMPTOM_TO_MEDICINE_MAP: Dict[str, List[str]] = {
     "fever": ["Paracetamol"],
     "headache": ["Ibuprofen", "Paracetamol"],
     "cold": ["Cetirizine"],
+    "cough": ["Cough syrup"],
+    "sore throat": ["Cetirizine", "Cough syrup"],
 }
 
 
