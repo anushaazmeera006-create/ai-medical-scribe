@@ -27,6 +27,7 @@ def _init_session_state() -> None:
     st.session_state.setdefault("fhir_resources", {})
     st.session_state.setdefault("audio_bytes", None)
     st.session_state.setdefault("db_record_id", None)
+    st.session_state.setdefault("_nav_lock", False)
 
 
 def _mobile_first_css() -> None:
@@ -57,7 +58,12 @@ def _mobile_first_css() -> None:
 
 
 def navigate(page: str) -> None:
+    # Prevent double-navigation from rapid repeated clicks.
+    if st.session_state.get("_nav_lock"):
+        return
+    st.session_state._nav_lock = True
     st.session_state.page = page
+    st.rerun()
 
 
 def page_home() -> None:
@@ -73,7 +79,11 @@ def page_home() -> None:
     st.write("")
     col = st.container()
     with col:
-        if st.button("Start Consultation", use_container_width=True):
+        if st.button(
+            "Start Consultation",
+            use_container_width=True,
+            disabled=bool(st.session_state.get("_nav_lock")),
+        ):
             navigate("patient_details")
 
 
@@ -81,32 +91,57 @@ def page_patient_details() -> None:
     st.markdown("### Patient Details")
 
     pd = st.session_state.get("patient_details", {})
-    name = st.text_input("Patient Name", value=pd.get("name", ""))
-    gender = st.selectbox(
-        "Gender",
-        options=["", "Male", "Female", "Other"],
-        index=["", "Male", "Female", "Other"].index(pd.get("gender", "") or ""),
-    )
-    age_or_dob = st.text_input(
-        "Age or Birth Date",
-        value=pd.get("age_or_birth_date", ""),
-        placeholder="e.g., 32 or 1994-05-12",
-    )
-    chief_complaint = st.text_area(
-        "Chief Complaint / Reason for Visit",
-        value=pd.get("chief_complaint", ""),
-    )
+    with st.form("patient_details_form", clear_on_submit=False):
+        name = st.text_input("Patient Name *", value=pd.get("name", ""))
+        gender = st.selectbox(
+            "Gender *",
+            options=["", "Male", "Female", "Other"],
+            index=["", "Male", "Female", "Other"].index(pd.get("gender", "") or ""),
+        )
+        age_or_dob = st.text_input(
+            "Age or Birth Date *",
+            value=pd.get("age_or_birth_date", ""),
+            placeholder="e.g., 32 or 1994-05-12",
+        )
+        chief_complaint = st.text_area(
+            "Chief Complaint / Reason for Visit *",
+            value=pd.get("chief_complaint", ""),
+        )
 
-    if st.button("Continue to Consultation", use_container_width=True):
-        st.session_state.patient_details = {
-            "name": name.strip(),
-            "gender": gender.strip(),
-            "age_or_birth_date": age_or_dob.strip(),
-            "chief_complaint": chief_complaint.strip(),
-            # Convenience field: if it looks like a date, use it as birth_date in FHIR
-            "birth_date": age_or_dob.strip() if "-" in age_or_dob else "",
-        }
-        navigate("consultation")
+        submitted = st.form_submit_button(
+            "Continue to Consultation",
+            use_container_width=True,
+            disabled=bool(st.session_state.get("_nav_lock")),
+        )
+
+    if submitted:
+        name_v = name.strip()
+        gender_v = (gender or "").strip()
+        age_or_dob_v = age_or_dob.strip()
+        chief_v = chief_complaint.strip()
+
+        missing = []
+        if not name_v:
+            missing.append("Patient Name")
+        if not gender_v:
+            missing.append("Gender")
+        if not age_or_dob_v:
+            missing.append("Age or Birth Date")
+        if not chief_v:
+            missing.append("Chief Complaint / Reason for Visit")
+
+        if missing:
+            st.error("Please fill required fields: " + ", ".join(missing))
+        else:
+            st.session_state.patient_details = {
+                "name": name_v,
+                "gender": gender_v,
+                "age_or_birth_date": age_or_dob_v,
+                "chief_complaint": chief_v,
+                # Convenience field: if it looks like a date, use it as birth_date in FHIR
+                "birth_date": age_or_dob_v if "-" in age_or_dob_v else "",
+            }
+            navigate("consultation")
 
 
 def page_consultation() -> None:
@@ -265,6 +300,7 @@ def page_results() -> None:
             "db_record_id",
         ]:
             st.session_state[key] = {} if isinstance(st.session_state.get(key), dict) else None
+        st.session_state._nav_lock = False
         navigate("home")
 
 
@@ -275,6 +311,8 @@ def main() -> None:
     )
     _init_session_state()
     _mobile_first_css()
+    # Allow navigation again on the next render tick of the new page.
+    st.session_state._nav_lock = False
 
     page = st.session_state.page
     if page == "home":
@@ -291,4 +329,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
 
