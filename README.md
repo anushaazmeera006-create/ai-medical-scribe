@@ -59,10 +59,3 @@ Set these environment variables before running the app if you want to persist co
 - `MONGODB_DB_NAME` – (optional) database name, default `ambient_medical_scribe`
 - `MONGODB_COLLECTION_NAME` – (optional) collection name, default `consultations`
 
-
-
-
-
-
-
-
