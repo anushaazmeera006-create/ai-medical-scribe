@@ -37,6 +37,39 @@ def _find_keywords(text: str, keyword_map: Dict[str, List[str]]) -> List[str]:
     return sorted(found)
 
 
+_WORD_NUMBERS = {
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+    "ten": "10",
+    # Common Hindi number words (basic)
+    "ek": "1",
+    "do": "2",
+    "teen": "3",
+    "char": "4",
+    "paanch": "5",
+}
+
+
+def _normalize_numbers(text: str) -> str:
+    """
+    Convert simple word-numbers to digits so that "two days" and
+    "do din" become "2 days" / "2 din".
+    """
+    text_lower = text.lower()
+    # Replace whole words only
+    for word, digit in _WORD_NUMBERS.items():
+        pattern = r"\b" + re.escape(word) + r"\b"
+        text_lower = re.sub(pattern, digit, text_lower)
+    return text_lower
+
+
 def _extract_duration(text: str) -> Optional[str]:
     """
     Extract simple duration patterns like:
@@ -49,7 +82,7 @@ def _extract_duration(text: str) -> Optional[str]:
         r"(\d+)\s*(din|day|days|week|weeks|month|months)\s*(se|since)?",
         r"for\s+(\d+)\s*(day|days|week|weeks|month|months)",
     ]
-    text_lower = text.lower()
+    text_lower = _normalize_numbers(text)
     for pattern in patterns:
         match = re.search(pattern, text_lower)
         if match:
