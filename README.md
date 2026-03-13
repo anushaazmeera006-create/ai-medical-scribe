@@ -31,13 +31,7 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-**Note:** Speech-to-text requires [ffmpeg](https://ffmpeg.org). Install it:
-
-- **Windows:** `choco install ffmpeg` or download from ffmpeg.org
-- **macOS:** `brew install ffmpeg`
-- **Linux:** `apt install ffmpeg` or `yum install ffmpeg`
-
-On **Streamlit Cloud**, `packages.txt` installs ffmpeg automatically.
+**Note:** Speech-to-text uses the OpenAI Whisper API directly and does **not** require `ffmpeg`/`pydub` locally.
 
 ### MongoDB Configuration (Optional)
 
