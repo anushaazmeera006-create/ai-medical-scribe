@@ -1,5 +1,5 @@
-
 import base64
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import streamlit as st
@@ -16,6 +16,9 @@ from medicine_suggester import DISCLAIMER, suggest_medicines
 from speech_to_text import transcribe_audio
 
 
+_VOSK_PATH_FILE = Path(__file__).with_name(".vosk_model_path")
+
+
 def _init_session_state() -> None:
     if "page" not in st.session_state:
         st.session_state.page = "home"
@@ -28,6 +31,13 @@ def _init_session_state() -> None:
     st.session_state.setdefault("audio_bytes", None)
     st.session_state.setdefault("db_record_id", None)
     st.session_state.setdefault("_nav_lock", False)
+    st.session_state.setdefault("vosk_model_path", "")
+
+    if not st.session_state.get("vosk_model_path"):
+        try:
+            st.session_state.vosk_model_path = _VOSK_PATH_FILE.read_text(encoding="utf-8").strip()
+        except Exception:
+            st.session_state.vosk_model_path = ""
 
 
 def _mobile_first_css() -> None:
@@ -148,6 +158,34 @@ def page_consultation() -> None:
     st.markdown("### Consultation Recording")
     st.write("Provide the doctor–patient conversation audio.")
 
+    with st.expander("Settings (offline speech-to-text)", expanded=False):
+        st.caption(
+            "If you don’t want to pay for OpenAI, set your Vosk model folder once here. "
+            "The app will remember it on this computer."
+        )
+        vosk_path = st.text_input(
+            "Vosk model folder path",
+            value=st.session_state.get("vosk_model_path", ""),
+            placeholder=r"C:\Users\...\vosk-model-small-hi-0.22",
+        ).strip()
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("Save model path", use_container_width=True):
+                st.session_state.vosk_model_path = vosk_path
+                try:
+                    _VOSK_PATH_FILE.write_text(vosk_path, encoding="utf-8")
+                    st.success("Saved.")
+                except Exception as e:
+                    st.error(f"Could not save: {e}")
+        with col_b:
+            if st.button("Clear saved path", use_container_width=True):
+                st.session_state.vosk_model_path = ""
+                try:
+                    _VOSK_PATH_FILE.unlink(missing_ok=True)  # pyright: ignore[reportCallIssue]
+                except Exception:
+                    pass
+                st.success("Cleared.")
+
     tab1, tab2 = st.tabs(["Record Audio", "Upload Audio"])
 
     audio_bytes: Optional[bytes] = st.session_state.get("audio_bytes")
@@ -192,7 +230,10 @@ def run_ai_pipeline() -> None:
         return
 
     with st.spinner("Running speech-to-text..."):
-        transcript, err = transcribe_audio(audio_bytes)
+        transcript, err = transcribe_audio(
+            audio_bytes,
+            vosk_model_path=st.session_state.get("vosk_model_path") or None,
+        )
     if not transcript:
         st.error(
             f"**Speech-to-text failed.** {err or 'Please try again with a clearer recording.'}"
@@ -329,6 +370,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
 
