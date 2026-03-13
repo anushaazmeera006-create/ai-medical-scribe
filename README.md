@@ -6,7 +6,7 @@ This Streamlit app converts doctor–patient conversations into structured clini
 
 - **Mobile-first UI** that works on phones and desktops
 - **Audio recording or upload** for consultation audio
-- **Whisper-based speech-to-text** (Hindi + English mixed speech)
+- **Whisper-based speech-to-text** (multilingual → English, works offline)
 - **Rule-based medical entity extraction**
 - **Clinical note generation**
 - **Medicine suggestions** with disclaimer
@@ -31,21 +31,25 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-### Speech-to-text (No Payment Option)
+### Speech-to-text (Free, Offline)
 
-If you don’t want to pay for OpenAI, the app can run **offline speech-to-text** using **Vosk**.
+This app now uses **`faster-whisper`** locally. No OpenAI key or payments needed.
 
-1) Download a Vosk model (Hindi or multilingual) and unzip it somewhere on your PC.
-2) Set the environment variable `VOSK_MODEL_PATH` to that folder.
+1) Install dependencies:
 
-PowerShell example:
-
-```powershell
-$env:VOSK_MODEL_PATH="C:\path\to\vosk-model-folder"
-streamlit run app.py
+```bash
+pip install -r requirements.txt
 ```
 
-**Note:** Offline STT works best with **WAV** recordings. (The app automatically uses offline STT when `OPENAI_API_KEY` is not set.)
+2) On first run, `faster-whisper` will download a Whisper model (default: `small`).
+3) All doctor–patient audio (Hindi + English mixed) is automatically **translated to English text**.
+
+Optional: to use a smaller / faster model (less accurate), set:
+
+```powershell
+$env:FAST_WHISPER_MODEL_SIZE="tiny"   # or "base", "small", "medium"
+streamlit run app.py
+```
 
 ### MongoDB Configuration (Optional)
 
@@ -54,6 +58,8 @@ Set these environment variables before running the app if you want to persist co
 - `MONGODB_URI` – MongoDB connection string
 - `MONGODB_DB_NAME` – (optional) database name, default `ambient_medical_scribe`
 - `MONGODB_COLLECTION_NAME` – (optional) collection name, default `consultations`
+
+
 
 
 
