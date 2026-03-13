@@ -3,15 +3,26 @@ from typing import Dict, List, Optional
 
 
 SYMPTOM_KEYWORDS = {
-    "fever": ["fever", "bukhar", "bukhār"],
-    "headache": ["headache", "sir dard", "sirdard", "sardard"],
-    "cold": ["cold", "sardi", "zukam", "zukaam"],
+    "fever": ["fever", "bukhar", "bukhār", "high temperature", "temperature"],
+    "headache": ["headache", "sir dard", "sirdard", "sardard", "migraine"],
+    "cold": ["cold", "sardi", "zukam", "zukaam", "runny nose", "blocked nose"],
+    "cough": ["cough", "khansi", "khansi ho rahi", "khasi"],
+    "sore throat": ["sore throat", "gale me dard", "throat pain"],
+    "body pain": ["body pain", "body ache", "sarir dard", "body is paining"],
 }
 
 MEDICATION_KEYWORDS = {
-    "paracetamol": ["paracetamol", "calpol", "crocin"],
+    "paracetamol": ["paracetamol", "calpol", "crocin", "dolo", "dolo 650"],
     "ibuprofen": ["ibuprofen", "brufen"],
     "cetirizine": ["cetirizine", "cetzine", "zyncet"],
+    "cough syrup": [
+        "cough syrup",
+        "benadryl",
+        "as-coril",
+        "as coril",
+        "torex",
+        "grilinctus",
+    ],
 }
 
 
@@ -36,6 +47,7 @@ def _extract_duration(text: str) -> Optional[str]:
     """
     patterns = [
         r"(\d+)\s*(din|day|days|week|weeks|month|months)\s*(se|since)?",
+        r"for\s+(\d+)\s*(day|days|week|weeks|month|months)",
     ]
     text_lower = text.lower()
     for pattern in patterns:
