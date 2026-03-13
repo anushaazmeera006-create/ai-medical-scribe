@@ -1,8 +1,12 @@
+
 import base64
 from typing import Any, Dict, List, Optional
 
 import streamlit as st
-from audio_recorder_streamlit import audio_recorder
+try:
+    from audio_recorder_streamlit import audio_recorder  # pyright: ignore[reportMissingImports]
+except Exception:
+    audio_recorder = None  # type: ignore[assignment]
 
 from clinical_notes import generate_clinical_notes
 from database import save_consultation_record
@@ -114,13 +118,20 @@ def page_consultation() -> None:
     audio_bytes: Optional[bytes] = st.session_state.get("audio_bytes")
 
     with tab1:
-        st.write("Tap to start/stop recording (mobile and desktop supported).")
-        recorded_audio = audio_recorder(
-            text="Start / Stop Recording",
-            icon_size="2x",
-        )
-        if recorded_audio is not None and len(recorded_audio) > 0:
-            audio_bytes = recorded_audio
+        if audio_recorder is None:
+            st.warning(
+                "Audio recording is unavailable because `audio-recorder-streamlit` "
+                "is not installed. Use the Upload Audio tab, or run: "
+                "`pip install -r requirements.txt`."
+            )
+        else:
+            st.write("Tap to start/stop recording (mobile and desktop supported).")
+            recorded_audio = audio_recorder(
+                text="Start / Stop Recording",
+                icon_size="2x",
+            )
+            if recorded_audio is not None and len(recorded_audio) > 0:
+                audio_bytes = recorded_audio
 
     with tab2:
         uploaded_file = st.file_uploader(
