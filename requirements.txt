@@ -1,5 +1,7 @@
 streamlit
-openai-whisper
 pymongo
 audio-recorder-streamlit
-pydub
+openai>=1.0.0
+vosk
+
+
