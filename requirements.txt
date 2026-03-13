@@ -1,7 +1,7 @@
 streamlit
 pymongo
 audio-recorder-streamlit
-openai>=1.0.0
-vosk
+faster-whisper
+
 
 
